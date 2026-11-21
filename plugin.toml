@@ -1,0 +1,15 @@
+id = "faysou.parquet-viewer"
+name = "Parquet Viewer"
+version = "0.1.0"
+description = "Browse Parquet rows, column types, and file metadata without loading the whole file."
+license = "MIT"
+authors = ["faysou"]
+categories = ["tools"]
+engines.openidea = "^1.14"
+
+[[contributes.customEditors]]
+id = "parquet"
+title = "Parquet"
+patterns = ["*.parquet"]
+web = "web/index.html"
+binary = true

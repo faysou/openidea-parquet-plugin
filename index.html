@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Parquet Viewer</title>
+    <link rel="stylesheet" href="src/viewer.css">
+  </head>
+  <body>
+    <header>
+      <div class="tabs" role="group" aria-label="Parquet view">
+        <button id="rows" aria-pressed="true" disabled>Rows</button>
+        <button id="schema" aria-pressed="false" disabled>Schema</button>
+      </div>
+      <span id="metadata"></span>
+      <div id="pager">
+        <button id="previous" aria-label="Previous page" disabled>‹</button>
+        <span id="position" aria-live="polite"></span>
+        <button id="next" aria-label="Next page" disabled>›</button>
+      </div>
+    </header>
+    <main id="content" aria-busy="true">
+      <p role="status">Reading Parquet metadata…</p>
+    </main>
+    <dialog id="cell">
+      <h2 id="column-name"></h2>
+      <pre id="value"></pre>
+      <form method="dialog"><button>Close</button></form>
+    </dialog>
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>

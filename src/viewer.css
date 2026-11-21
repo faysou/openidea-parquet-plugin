@@ -1,0 +1,53 @@
+:root {
+  font-family: var(--openidea-font-ui, system-ui);
+  font-size: var(--openidea-font-size, 13px);
+  color: var(--openidea-fg, #242629);
+  background: var(--openidea-bg, #fff);
+  color-scheme: light dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; height: 100dvh; display: flex; flex-direction: column; }
+header, .tabs, #pager { display: flex; align-items: center; gap: 8px; }
+header { flex-wrap: wrap; border-bottom: 1px solid var(--openidea-border, #aaa); padding: 8px 12px; }
+#metadata { color: var(--openidea-fg-muted, inherit); }
+#pager { margin-inline-start: auto; }
+#pager[hidden] { display: none; }
+button {
+  font: inherit;
+  color: inherit;
+  background: var(--openidea-bg-elevated, transparent);
+  border: 1px solid var(--openidea-border, #aaa);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+button:hover:not(:disabled) { background: var(--openidea-bg-hover, #8882); }
+button[aria-pressed="true"] { background: var(--openidea-bg-selected, #8883); }
+button:disabled { opacity: .55; cursor: default; }
+main { flex: 1; overflow: auto; }
+main > p { padding: 8px 12px; }
+table { border-spacing: 0; min-width: 100%; font-feature-settings: "tnum"; }
+th, td { text-align: left; border-bottom: 1px solid var(--openidea-border, #aaa); padding: 4px 10px; }
+thead th { position: sticky; top: 0; background: var(--openidea-bg-elevated, Canvas); }
+tbody th { color: var(--openidea-fg-muted, inherit); font-weight: normal; }
+td em { color: var(--openidea-fg-muted, inherit); }
+.cell {
+  border: 0;
+  background: transparent;
+  padding: 0 4px;
+  max-width: 360px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+dialog {
+  border: 1px solid var(--openidea-border, #aaa);
+  border-radius: 6px;
+  padding: 14px;
+  color: inherit;
+  background: var(--openidea-bg-elevated, Canvas);
+  width: min(640px, 90vw);
+}
+dialog h2 { font-size: 1em; margin-top: 0; }
+dialog pre { max-height: 65vh; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+dialog form { text-align: right; }

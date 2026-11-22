@@ -1,0 +1,82 @@
+#chart-panel {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+#chart-panel[hidden], #chart-panel [hidden] { display: none; }
+
+#chart-panel .plot-area {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.chart-toolbar, #chart-type {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.chart-toolbar {
+  justify-content: space-between;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--openidea-border, #aaa);
+}
+
+#chart-type button {
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 26px;
+  padding: 0;
+  border-color: transparent;
+}
+
+#chart-type button[aria-pressed="true"] { border-color: var(--openidea-border, #aaa); }
+#chart-type svg { width: 16px; height: 16px; }
+#chart-type :is(path, circle):not([fill]) { fill: none; }
+#chart-type svg:not([stroke]) {
+  stroke: currentColor;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#chart-type svg[fill] circle { fill: currentColor; }
+#chart-status { color: var(--openidea-fg-muted, inherit); margin: 7px 10px; }
+#plot { flex: 1; min-height: 0; }
+
+#chart-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 0 0 clamp(128px, 26vw, 230px);
+  min-width: 0;
+  gap: 8px;
+  padding: 6px 9px;
+  overflow: auto;
+  border-inline-start: 1px solid var(--openidea-border, #aaa);
+  background: var(--openidea-bg-elevated, transparent);
+}
+
+#chart-settings { width: 100%; min-width: 0; margin: 0; padding: 0; border: 0; }
+#chart-settings summary { cursor: pointer; font-weight: 600; }
+.chart-settings-body { display: grid; gap: 8px; padding: 8px 0 4px; }
+.chart-column, #chart-y-field, #chart-y-series { display: grid; gap: 4px; min-width: 0; }
+#chart-y-series > div { display: flex; align-items: center; gap: 4px; }
+#chart-form :is(select, input) { font: inherit; color: inherit; min-width: 0; }
+#chart-form :is(select, input[type="number"]) {
+  width: 100%;
+  padding: 2px 4px;
+  border: 1px solid var(--openidea-border, #8888);
+  border-radius: 4px;
+  background: var(--openidea-bg, #fff);
+}
+#chart-y-series button { flex: none; padding: 0 6px; }
+#chart-add-series { justify-self: start; }
+#chart-line-style { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+#chart-line-style label { display: flex; align-items: center; gap: 2px; }

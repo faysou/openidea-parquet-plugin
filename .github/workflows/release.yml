@@ -1,0 +1,74 @@
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '11.18.0'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install DuckDB for integration tests
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl --fail --location --retry 3 -o duckdb.zip https://github.com/duckdb/duckdb/releases/download/v1.5.5/duckdb_cli-linux-amd64.zip
+          echo '08c0ca117111fcede14239d0093792352befdc174218c344d232c13279643d05  duckdb.zip' | sha256sum --check
+          mkdir -p duckdb-cli
+          unzip -q duckdb.zip -d duckdb-cli
+          echo "$RUNNER_TEMP/duckdb-cli" >> "$GITHUB_PATH"
+      - name: Test and build
+        env:
+          CARGO_BUILD_JOBS: 2
+        run: |
+          duckdb --version
+          node --test --test-concurrency=2
+          cargo test --locked --lib
+          pnpm build
+          rustup target add wasm32-wasip2
+          cargo build --locked --release --target wasm32-wasip2
+          mkdir -p dist
+          cp target/wasm32-wasip2/release/openidea_parquet_plugin.wasm dist/plugin.wasm
+      - name: Package plugin
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            python3 scripts/package.py --tag "$GITHUB_REF_NAME"
+          else
+            python3 scripts/package.py
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: parquet-viewer
+          path: dist/*.oiplugin
+          if-no-files-found: error
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: parquet-viewer
+          path: dist
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.oiplugin --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes \
+            --notes "Install with Settings > Plugins > gear > Install Plugin from Package File. Requires an OpenIDEA build with binary web custom editor support (see the README)."

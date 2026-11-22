@@ -1,0 +1,42 @@
+.grid-heading { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.grid-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-color: transparent;
+  background: transparent;
+  font-weight: inherit;
+  padding: 0 3px;
+}
+.grid-heading svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.grid-sort svg { opacity: .55; }
+[aria-sort] .grid-sort svg { opacity: 1; }
+.grid-filter {
+  display: inline-grid;
+  place-items: center;
+  padding: 2px;
+  border-color: transparent;
+  background: transparent;
+}
+.grid-filter-active {
+  border-color: var(--openidea-border, #aaa);
+  background: var(--openidea-bg-selected, #8883);
+}
+.grid-filter-dialog { width: min(390px, 92vw); }
+.grid-filter-dialog > label { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.grid-filter-dialog :is(select, input[type="search"]) { font: inherit; color: inherit; }
+.grid-filter-dialog input[type="search"] { width: 100%; margin-top: 8px; }
+.grid-filter-dialog p { min-height: 1.3em; margin: 8px 0; }
+.grid-filter-values { max-height: 44vh; overflow: auto; }
+.grid-filter-values label { display: flex; align-items: baseline; gap: 5px; padding: 2px 0; }
+.grid-filter-values :is(span, em) { overflow-wrap: anywhere; white-space: pre-wrap; }
+.grid-filter-actions { display: flex; justify-content: end; gap: 6px; margin-top: 8px; }

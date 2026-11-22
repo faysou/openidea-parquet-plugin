@@ -43,13 +43,18 @@ export async function openParquet(document) {
   const total = Number(metadata.num_rows);
   if (!Number.isSafeInteger(total) || total < 0) throw new Error("The Parquet file has an invalid row count.");
   const columns = schema.children.map(({ element }) => element.name);
-  const pageSize = Math.min(PAGE_ROWS, Math.max(1, Math.floor(PAGE_CELLS / Math.max(columns.length, 1))));
+  const initialPageSize = Math.min(PAGE_ROWS, Math.max(1, Math.floor(PAGE_CELLS / Math.max(columns.length, 1))));
   const codecs = [...new Set(metadata.row_groups.flatMap(group => group.columns.map(column => column.meta_data?.codec).filter(Boolean)))];
 
   return {
-    size, columns, schema: schema.children, total, pageSize, rowGroups: metadata.row_groups.length, codecs,
+    size, columns, schema: schema.children, total, initialPageSize, pageSize: initialPageSize,
+    maxPageSize: Math.min(1000, Math.max(1, Math.floor(20_000 / Math.max(columns.length, 1)))),
+    rowGroups: metadata.row_groups.length, codecs,
+    rowGroup(index) {
+      return metadata.row_groups[index];
+    },
     async readPage(start) {
-      const end = Math.min(total, start + pageSize);
+      const end = Math.min(total, start + this.pageSize);
       if (start >= end || !columns.length) return [];
       let bytes = 0;
       let decodedBytes = 0;

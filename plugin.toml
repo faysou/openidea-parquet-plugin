@@ -6,6 +6,11 @@ license = "MIT"
 authors = ["faysou"]
 categories = ["tools"]
 engines.openidea = "^1.14"
+wasm = "dist/plugin.wasm"
+activation = ["on-view:parquet"]
+
+[capabilities]
+optional = ["process:duckdb"]
 
 [[contributes.customEditors]]
 id = "parquet"

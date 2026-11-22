@@ -132,3 +132,8 @@ to write directly to the destination chosen in the Save dialog, bypassing the gr
 and the whole-buffer transfer limit.
 
 Run the decoder tests with `pnpm test`.
+
+## License
+
+Copyright (c) 2026 Faysal Aberkane <faysal.aberkane@gmail.com>. You may use this plugin under
+either the MIT License or the Apache License, Version 2.0, at your option. [License texts](LICENSE)

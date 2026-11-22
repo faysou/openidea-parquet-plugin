@@ -1,9 +1,9 @@
 id = "faysou.parquet-viewer"
 name = "Parquet Viewer"
-version = "0.1.0"
+version = "0.1.1"
 description = "Browse Parquet rows, column types, and file metadata without loading the whole file."
-license = "MIT"
-authors = ["faysou"]
+license = "MIT OR Apache-2.0"
+authors = ["Faysal Aberkane <faysal.aberkane@gmail.com>"]
 categories = ["tools"]
 engines.openidea = "^1.14"
 wasm = "dist/plugin.wasm"

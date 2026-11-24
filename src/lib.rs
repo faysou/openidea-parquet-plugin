@@ -1,5 +1,5 @@
 use openidea_plugin::views::{View, ViewEvent, Viewport, Views};
-use openidea_plugin::{Error, Invocation, Plugin, host, register_plugin};
+use openidea_plugin::{Error, FileDialog, FileFilter, Invocation, Plugin, host, register_plugin};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -18,17 +18,15 @@ struct Request {
     key: String,
     #[serde(rename = "profileColumn")]
     profile_column: Option<String>,
+    action: Option<FileAction>,
 }
 
-#[derive(Deserialize)]
-struct FileAction {
-    path: String,
-    text: String,
-}
-
-enum FileMode {
-    Open,
-    Save,
+#[derive(Clone, Copy, Deserialize)]
+#[serde(rename_all = "camelCase")]
+enum FileAction {
+    Compare,
+    ExportCsv,
+    ExportParquet,
 }
 
 #[derive(Serialize)]
@@ -61,19 +59,8 @@ impl Views for Parquet {
         if view != VIEW {
             return Ok(());
         }
-        let (text, action) = match event {
-            ViewEvent::Message(text) => (text, None),
-            ViewEvent::Field(key, value) => {
-                let mode = match key.as_str() {
-                    "document-file:open" => FileMode::Open,
-                    "document-file:save" => FileMode::Save,
-                    _ => return Ok(()),
-                };
-                let FileAction { path, text } =
-                    serde_json::from_str(&value).map_err(|err| Error::Invalid(err.to_string()))?;
-                (text, Some((mode, path)))
-            }
-            _ => return Ok(()),
+        let ViewEvent::Message(text) = event else {
+            return Ok(());
         };
         if text.len() > 70_000 {
             return Ok(());
@@ -87,7 +74,7 @@ impl Views for Parquet {
         let result = ctx
             .editor()
             .ok_or_else(|| "Open the Parquet file again in a compatible OpenIDEA build.".to_owned())
-            .and_then(|editor| run(&editor.path(), &request, action));
+            .and_then(|editor| run(&editor.path(), &request));
         let reply = match result {
             Ok(result) => serde_json::json!({ "id": request.id, "result": result }),
             Err(error) => serde_json::json!({ "id": request.id, "error": error }),
@@ -104,19 +91,50 @@ impl Views for Parquet {
     }
 }
 
-fn run(path: &str, request: &Request, action: Option<(FileMode, String)>) -> Result<Value, String> {
-    let result = match action {
-        None => query(path, &request.sql)?,
-        Some((FileMode::Open, target)) if let Some(column) = &request.profile_column => {
-            return compare::profile(path, &target, column);
-        }
-        Some((FileMode::Open, target)) => compare::files(path, &target, &request.key)?,
-        Some((FileMode::Save, target)) => {
-            export(path, &target, &request.sql)?;
-            return Ok(serde_json::json!({ "saved": true }));
-        }
+fn run(path: &str, request: &Request) -> Result<Value, String> {
+    let Some(action) = request.action else {
+        return serde_json::to_value(query(path, &request.sql)?).map_err(|error| error.to_string());
     };
-    serde_json::to_value(result).map_err(|error| error.to_string())
+    let (title, extension, label) = match action {
+        FileAction::Compare => ("Compare Parquet files", "parquet", "Parquet"),
+        FileAction::ExportCsv => ("Export query results", "csv", "CSV"),
+        FileAction::ExportParquet => ("Export query results", "parquet", "Parquet"),
+    };
+    let save = !matches!(action, FileAction::Compare);
+    let dialog = FileDialog {
+        save,
+        name: save.then(|| format!("parquet-export.{extension}")),
+        filters: vec![FileFilter {
+            name: label.into(),
+            extensions: vec![extension.into()],
+        }],
+    };
+    let phase = |value: &str| {
+        host::post_view_message(
+            VIEW,
+            &serde_json::json!({ "id": request.id, "phase": value }).to_string(),
+        )
+        .map_err(|err| err.to_string())
+    };
+    phase("picking")?;
+    let Some(target) = host::pick_file(title, &dialog).map_err(|err| err.to_string())? else {
+        return Ok(Value::Null);
+    };
+    phase("running")?;
+    match action {
+        FileAction::Compare => {
+            if let Some(column) = &request.profile_column {
+                compare::profile(path, &target, column)
+            } else {
+                serde_json::to_value(compare::files(path, &target, &request.key)?)
+                    .map_err(|e| e.to_string())
+            }
+        }
+        FileAction::ExportCsv | FileAction::ExportParquet => {
+            export(path, &target, &request.sql)?;
+            Ok(serde_json::json!({ "saved": true }))
+        }
+    }
 }
 
 fn export(path: &str, target: &str, sql: &str) -> Result<(), String> {
@@ -339,6 +357,88 @@ mod tests {
             .spawn()?;
         writeln!(child.stdin.take().unwrap(), "{script}")?;
         child.wait_with_output()
+    }
+
+    #[test]
+    fn cancelled_compare_returns_null_without_starting_duckdb() {
+        let host = openidea_plugin::mock::MockHost::install();
+        host.open_editor("/data/open.parquet", "binary", "", &[]);
+        host.answer_next_prompt(None);
+        Parquet
+            .handle(
+                VIEW,
+                ViewEvent::Message(r#"{"id":"compare","action":"compare"}"#.into()),
+                &host.invocation(),
+            )
+            .unwrap();
+        let messages: Vec<_> = host
+            .view_messages()
+            .into_iter()
+            .map(|(view, text)| (view, serde_json::from_str::<Value>(&text).unwrap()))
+            .collect();
+        assert_eq!(
+            messages,
+            [
+                (
+                    VIEW.into(),
+                    serde_json::json!({"id":"compare","phase":"picking"})
+                ),
+                (
+                    VIEW.into(),
+                    serde_json::json!({"id":"compare","result":null})
+                ),
+            ]
+        );
+        assert!(host.process_runs().is_empty());
+    }
+
+    #[test]
+    fn component_exports_query_to_the_path_chosen_by_the_user() {
+        let host =
+            openidea_plugin::mock::MockHost::install().with_capabilities(&["process:duckdb"]);
+        let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("test/fixtures/synthetic-trades.parquet");
+        let directory =
+            std::env::temp_dir().join(format!("openidea-parquet-picker-{}", std::process::id()));
+        std::fs::create_dir(&directory).unwrap();
+        let target = directory.join("export.csv");
+        let path = target.to_str().unwrap();
+        host.open_editor(source.to_str().unwrap(), "binary", "", &[]);
+        host.answer_next_prompt(Some(&[path]));
+        host.on_process("duckdb", |_, stdin| {
+            let out = run_cli(stdin.unwrap()).map_err(|e| Error::Failed(e.to_string()))?;
+            Ok(openidea_plugin::ProcessOutput {
+                status: out.status.code(),
+                stdout: String::from_utf8_lossy(&out.stdout).into_owned(),
+                stderr: String::from_utf8_lossy(&out.stderr).into_owned(),
+            })
+        });
+        Parquet
+            .handle(
+                VIEW,
+                ViewEvent::Message(
+                    r#"{"id":"export","action":"exportCsv","sql":"SELECT 37 AS amount"}"#.into(),
+                ),
+                &host.invocation(),
+            )
+            .unwrap();
+        let messages: Vec<_> = host
+            .view_messages()
+            .into_iter()
+            .map(|(_, text)| serde_json::from_str::<Value>(&text).unwrap())
+            .collect();
+        assert_eq!(
+            messages,
+            [
+                serde_json::json!({"id":"export","phase":"picking"}),
+                serde_json::json!({"id":"export","phase":"running"}),
+                serde_json::json!({"id":"export","result":{"saved":true}}),
+            ]
+        );
+        let contents = std::fs::read_to_string(&target).unwrap();
+        std::fs::remove_file(target).unwrap();
+        std::fs::remove_dir(directory).unwrap();
+        assert_eq!(contents.lines().collect::<Vec<_>>(), ["amount", "37"]);
     }
 
     #[test]

@@ -5,7 +5,7 @@ description = "Browse Parquet rows, column types, and file metadata without load
 license = "MIT OR Apache-2.0"
 authors = ["Faysal Aberkane <faysal.aberkane@gmail.com>"]
 categories = ["tools"]
-engines.openidea = "^1.14"
+engines.openidea = "^1.16"
 wasm = "dist/plugin.wasm"
 activation = ["on-view:parquet"]
 

@@ -9,8 +9,10 @@ runs locally. Browsing rows and schema works without DuckDB.
 
 ## Install a release
 
-**Compatibility:** OpenIDEA v0.1.50 lacks the binary web editor and range-read APIs this plugin
-requires. Use a build containing the [binary web editor changes](https://github.com/l0ng-ai/openidea/pull/4914).
+The plugin on this branch requires OpenIDEA plugin API 1.16 with binary ranged reads and the
+component file chooser. OpenIDEA v0.1.51 ships API 1.15. To test this branch, use a build of
+[the component file chooser PR](https://github.com/l0ng-ai/openidea/pull/5655), which includes
+[the binary editor API](https://github.com/l0ng-ai/openidea/pull/4914).
 
 1. Download the `.oiplugin` asset from [GitHub Releases](https://github.com/faysou/openidea-parquet-plugin/releases).
 1. In OpenIDEA, open **Settings > Plugins**, click the gear, and choose **Install Plugin from Package File…**.

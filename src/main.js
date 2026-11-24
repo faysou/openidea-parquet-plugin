@@ -645,7 +645,7 @@ byId("export-form").addEventListener("submit", async event => {
       if (!await window.openidea.saveFile({ name, filters, data })) return;
     } else {
       const sql = scope === "query" ? lastQuery : "SELECT * FROM parquet_data";
-      if (!await duckdb({ sql }, { mode: "save", name, filters })) return;
+      if (!await duckdb({ sql, action: extension === "parquet" ? "exportParquet" : "exportCsv" })) return;
     }
     byId("export-dialog").close();
   } catch (error) {
@@ -680,7 +680,7 @@ byId("compare-form").addEventListener("submit", async event => {
   try {
     const profile = byId("compare-mode").value === "profile";
     const input = profile ? { profileColumn: byId("distribution-column").value } : { key };
-    const result = await duckdb(input, { mode: "open", filters: [{ name: "Parquet", extensions: ["parquet"] }] });
+    const result = await duckdb({ ...input, action: "compare" });
     if (version !== comparisonVersion || !byId("compare-dialog").open) return;
     if (!result) {
       status.textContent = "";

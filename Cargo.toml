@@ -10,6 +10,6 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-openidea-plugin = { git = "https://github.com/l0ng-ai/openidea", rev = "d80aeb6e9ec85275bf8f7845e218d81a14a90136" }
+openidea-plugin = { git = "https://github.com/faysou/openidea", rev = "b7fa5ae5301d2d1e580421ae12659d4cb0c09bf0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
